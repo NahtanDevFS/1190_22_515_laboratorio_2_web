@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Twitter Lite</title>
+    <link rel="stylesheet" href="estilos.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Twitter Lite</h1>
+      <form id="tweet-form">
+        <input
+          type="text"
+          id="username-input"
+          placeholder="Tu nombre de usuario"
+          required
+        />
+        <textarea
+          id="tweet-input"
+          placeholder="¿Qué está pasando?"
+          maxlength="500"
+        ></textarea>
+        <div class="image-char-count-container">
+          <div class="tweet-image-container">
+            Agregar imagen:
+            <input type="file" id="image-input" accept="image/*" hidden />
+            <label for="image-input" class="custom-file-upload">IMG</label>
+            <span id="file-name"></span>
+          </div>
+          <div id="char-count">500</div>
+        </div>
+
+        <button type="submit" id="tweet-submit">Twittear</button>
+      </form>
+      <ul id="tweets-list"></ul>
+    </div>
+
+    <script>
+      const form = document.getElementById("tweet-form");
+      const usernameInput = document.getElementById("username-input");
+      const tweetInput = document.getElementById("tweet-input");
+      const imageInput = document.getElementById("image-input");
+      const list = document.getElementById("tweets-list");
+      const charCount = document.getElementById("char-count");
+      const fileNameSpan = document.getElementById("file-name");
+
+      const MAX_CHARS = 500;
+
+      let tweets = JSON.parse(localStorage.getItem("tweets")) || [];
+
+      const saveTweets = () => {
+        localStorage.setItem("tweets", JSON.stringify(tweets));
+      };
+
+      const formatDate = (dateString) => {
+        const options = {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        };
+        return new Date(dateString).toLocaleDateString("es-ES", options);
+      };
+
+      const renderTweets = () => {
+        list.innerHTML = "";
+        tweets.forEach((tweet, index) => {
+          const li = document.createElement("li");
+          li.className = "tweet-item";
+          li.setAttribute("data-index", index);
+
+          let imageHTML = "";
+          if (tweet.image) {
+            imageHTML = `<img src="${tweet.image}" class="tweet-image" alt="Imagen del tweet" />`;
+          }
+
+          li.innerHTML = `
+            <div class="tweet-avatar">${tweet.username
+              .charAt(0)
+              .toUpperCase()}</div>
+            <div class="tweet-content">
+                <div class="tweet-header">
+                <span class="tweet-username">@${tweet.username}</span>
+                <span class="tweet-date">${formatDate(tweet.date)}</span>
+                </div>
+                <p class="tweet-text">${tweet.text}</p>
+                ${imageHTML}
+                <div class="tweet-actions">
+                <button class="edit-button">Editar</button>
+                <button class="delete-button">Eliminar</button>
+                </div>
+            </div>
+            `;
+          list.appendChild(li);
+        });
+      };
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const username = usernameInput.value.trim();
+        const tweetText = tweetInput.value.trim();
+        const imageFile = imageInput.files[0];
+
+        if (username && (tweetText || imageFile)) {
+          const reader = new FileReader();
+
+          reader.onload = function (event) {
+            const newTweet = {
+              username: username,
+              text: tweetText,
+              date: new Date().toISOString(),
+              image: event.target.result || null,
+            };
+            tweets.unshift(newTweet);
+            saveTweets();
+            renderTweets();
+            tweetInput.value = "";
+            imageInput.value = "";
+            fileNameSpan.textContent = "";
+            updateCharCount();
+          };
+
+          if (imageFile) {
+            reader.readAsDataURL(imageFile);
+          } else {
+            const newTweet = {
+              username: username,
+              text: tweetText,
+              date: new Date().toISOString(),
+              image: null,
+            };
+            tweets.unshift(newTweet);
+            saveTweets();
+            renderTweets();
+            tweetInput.value = "";
+            updateCharCount();
+          }
+        } else {
+          alert("El tweet no puede estar vacío.");
+        }
+      });
+
+      tweetInput.addEventListener("input", () => {
+        updateCharCount();
+      });
+
+      const updateCharCount = () => {
+        const remainingChars = MAX_CHARS - tweetInput.value.length;
+        charCount.textContent = `${remainingChars}`;
+      };
+
+      imageInput.addEventListener("change", () => {
+        if (imageInput.files.length > 0) {
+          fileNameSpan.textContent = imageInput.files[0].name;
+        } else {
+          fileNameSpan.textContent = "";
+        }
+      });
+
+      list.addEventListener("click", (e) => {
+        const item = e.target.closest(".tweet-item");
+        if (!item) return;
+
+        const index = parseInt(item.getAttribute("data-index"));
+
+        if (e.target.classList.contains("edit-button")) {
+          const tweetTextElement = item.querySelector(".tweet-text");
+          const actionsContainer = item.querySelector(".tweet-actions");
+          const originalText = tweets[index].text;
+
+          tweetTextElement.style.display = "none";
+          actionsContainer.innerHTML = `
+            <textarea class="tweet-edit-input">${originalText}</textarea>
+            <button class="save-button">Guardar</button>
+            <button class="cancel-button">Cancelar</button>
+            `;
+        } else if (e.target.classList.contains("save-button")) {
+          const editInput = item.querySelector(".tweet-edit-input");
+          const newText = editInput.value.trim();
+
+          if (newText) {
+            tweets[index].text = newText;
+            saveTweets();
+            renderTweets();
+          } else {
+            alert("El tweet no puede estar vacío.");
+          }
+        } else if (e.target.classList.contains("cancel-button")) {
+          renderTweets();
+        } else if (e.target.classList.contains("delete-button")) {
+          tweets.splice(index, 1);
+          saveTweets();
+          renderTweets();
+        }
+      });
+
+      renderTweets();
+      updateCharCount();
+    </script>
+  </body>
+</html>
