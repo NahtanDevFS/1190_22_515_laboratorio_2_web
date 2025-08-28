@@ -49,11 +49,13 @@
 
       let tweets = JSON.parse(localStorage.getItem("tweets")) || [];
 
-      const saveTweets = () => {
+      // Función para guardar los tweets en localStorage
+      const guardarTweets = () => {
         localStorage.setItem("tweets", JSON.stringify(tweets));
       };
 
-      const formatDate = (dateString) => {
+      // Función para formatear la fecha y hora
+      const formatearFecha = (dateString) => {
         const options = {
           year: "numeric",
           month: "long",
@@ -61,10 +63,11 @@
           hour: "2-digit",
           minute: "2-digit",
         };
-        return new Date(dateString).toLocaleDateString("es-ES", options);
+        return new Date(dateString).toLocaleDateString("es-ES", options); // formato en español
       };
 
-      const renderTweets = () => {
+      // Función para renderizar los tweets en la interfaz
+      const renderizarTweets = () => {
         list.innerHTML = "";
         tweets.forEach((tweet, index) => {
           const li = document.createElement("li");
@@ -83,7 +86,7 @@
             <div class="tweet-content">
                 <div class="tweet-header">
                 <span class="tweet-username">@${tweet.username}</span>
-                <span class="tweet-date">${formatDate(tweet.date)}</span>
+                <span class="tweet-date">${formatearFecha(tweet.date)}</span>
                 </div>
                 <p class="tweet-text">${tweet.text}</p>
                 ${imageHTML}
@@ -97,6 +100,7 @@
         });
       };
 
+      // Evento para añadir un nuevo tweet
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const username = usernameInput.value.trim();
@@ -113,13 +117,13 @@
               date: new Date().toISOString(),
               image: event.target.result || null,
             };
-            tweets.unshift(newTweet);
-            saveTweets();
-            renderTweets();
-            tweetInput.value = "";
-            imageInput.value = "";
+            tweets.unshift(newTweet); // Añadir al principio de la lista
+            guardarTweets();
+            renderizarTweets();
+            tweetInput.value = ""; // Limpiar el input
+            imageInput.value = ""; // Limpiar el campo de archivo
             fileNameSpan.textContent = "";
-            updateCharCount();
+            actualizarContadorCaracteres();
           };
 
           if (imageFile) {
@@ -132,25 +136,27 @@
               image: null,
             };
             tweets.unshift(newTweet);
-            saveTweets();
-            renderTweets();
+            guardarTweets();
+            renderizarTweets();
             tweetInput.value = "";
-            updateCharCount();
+            actualizarContadorCaracteres();
           }
         } else {
           alert("El tweet no puede estar vacío.");
         }
       });
 
+      // Evento para actualizar el contador de caracteres
       tweetInput.addEventListener("input", () => {
-        updateCharCount();
+        actualizarContadorCaracteres();
       });
 
-      const updateCharCount = () => {
+      const actualizarContadorCaracteres = () => {
         const remainingChars = MAX_CHARS - tweetInput.value.length;
         charCount.textContent = `${remainingChars}`;
       };
 
+      // Evento para mostrar el nombre del archivo seleccionado
       imageInput.addEventListener("change", () => {
         if (imageInput.files.length > 0) {
           fileNameSpan.textContent = imageInput.files[0].name;
@@ -159,6 +165,7 @@
         }
       });
 
+      // Evento para manejar la edición y eliminación
       list.addEventListener("click", (e) => {
         const item = e.target.closest(".tweet-item");
         if (!item) return;
@@ -182,22 +189,23 @@
 
           if (newText) {
             tweets[index].text = newText;
-            saveTweets();
-            renderTweets();
+            guardarTweets();
+            renderizarTweets();
           } else {
             alert("El tweet no puede estar vacío.");
           }
         } else if (e.target.classList.contains("cancel-button")) {
-          renderTweets();
+          renderizarTweets();
         } else if (e.target.classList.contains("delete-button")) {
           tweets.splice(index, 1);
-          saveTweets();
-          renderTweets();
+          guardarTweets();
+          renderizarTweets();
         }
       });
 
-      renderTweets();
-      updateCharCount();
+      // Cargar los tweets al iniciar
+      renderizarTweets();
+      actualizarContadorCaracteres();
     </script>
   </body>
 </html>
